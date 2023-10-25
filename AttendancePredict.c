@@ -1,79 +1,149 @@
 #include <stdio.h>
 #include <time.h>
 
+// Function to check if a year is a leap year
+int isLeapYear(int year) {
+    if ((year % 4 == 0 && year % 100 != 0) || (year % 400 == 0)) {
+        return 1; // It's a leap year
+    } else {
+        return 0; // It's not a leap year
+    }
+}
+
+// Function to get the number of days in a month
+int getDaysInMonth(int month, int year) {
+    int daysInMonth[] = {0, 31, 28 + isLeapYear(year), 31, 30, 31, 30, 31, 31, 30, 31, 30, 31};
+    return daysInMonth[month];
+}
+
+// Function to calculate the number of days between two dates
+int calculateDaysBetweenDates(int day1, int month1, int year1, int day2, int month2, int year2) {
+    int days = 0;
+
+    while (year1 != year2 || month1 != month2 || day1 != day2) {
+        days++;
+        day1++;
+        if (day1 > getDaysInMonth(month1, year1)) {
+            day1 = 1;
+            month1++;
+            if (month1 > 12) {
+                month1 = 1;
+                year1++;
+            }
+        }
+    }
+
+    return days;
+}
+
 int main() {
+    int year;
+
+    printf("Enter a year: ");
+    scanf("%d", &year);
+
+    if (isLeapYear(year)) {
+        printf("%d is a leap year.\n", year);
+    } else {
+        printf("%d is not a leap year.\n", year);
+    }
+
     int day1, month1, year1, day2, month2, year2;
-    printf("Enter the first date of your leave (dd mm yyyy): ");
+
+    printf("Enter the first date (dd mm yyyy): ");
     scanf("%d %d %d", &day1, &month1, &year1);
 
-    printf("Enter the last date of your leave (dd mm yyyy): ");
+    printf("Enter the second date (dd mm yyyy): ");
     scanf("%d %d %d", &day2, &month2, &year2);
 
-    struct tm start_date = {0};
-    struct tm end_date = {0};
-
-    start_date.tm_year = year1 - 1900;
-    start_date.tm_mon = month1 - 1;
-    start_date.tm_mday = day1;
-
-    end_date.tm_year = year2 - 1900;
-    end_date.tm_mon = month2 - 1;
-    end_date.tm_mday = day2;
-
-    time_t start_time = mktime(&start_date);
-    time_t end_time = mktime(&end_date);
-
-    if (start_time == -1 || end_time == -1) {
-        printf("Invalid date input.\n");
+    if (year2 < year1 || (year2 == year1 && month2 < month1) || (year2 == year1 && month2 == month1 && day2 < day1)) {
+        printf("Invalid input. The second date should be later than the first date.\n");
         return 1;
     }
 
-    double seconds = difftime(end_time, start_time);
-    double days = seconds / 86400; // 86400 seconds in a day
+    int daysBetween = calculateDaysBetweenDates(day1, month1, year1, day2, month2, year2);
 
-    int lectures[(int)days + 1];
+    int lecturesPerDay[daysBetween + 1];
+    int lecturesAttendedPerDay[daysBetween + 1];
 
-    for (int i = 0; i <= days; i++) {
-        struct tm current_date = *localtime(&start_time);
-        current_date.tm_mday += i;
-        time_t current_time = mktime(&current_date);
-        printf("Enter the number of lectures for %d/%d/%d: ", current_date.tm_mday, current_date.tm_mon + 1, current_date.tm_year + 1900);
-        scanf("%d", &lectures[i]);
+    for (int i = 0; i <= daysBetween; i++) {
+        printf("Enter the number of lectures for day %d (%d/%d/%d): ", i + 1, day1, month1, year1);
+        scanf("%d", &lecturesPerDay[i]);
+        day1++;
+        if (day1 > getDaysInMonth(month1, year1)) {
+            day1 = 1;
+            month1++;
+            if (month1 > 12) {
+                month1 = 1;
+                year1++;
+            }
+        }
     }
 
-    int totalAttended = 0;
-    for (int i = 0; i <= days; i++) {
-        struct tm current_date = *localtime(&start_time);
-        current_date.tm_mday += i;
-        time_t current_time = mktime(&current_date);
+    day1 = day1 - (daysBetween + 1); // Reset day1 to the initial value
+    month1 = month1 - 1; // Reset month1 to the initial value
+    year1 = year1 - (daysBetween / 30); // Reset year1 to the initial value
 
-        int lecturesAttended;
-        printf("How many lectures will you attend on %d/%d/%d: ", current_date.tm_mday, current_date.tm_mon + 1, current_date.tm_year + 1900);
-        scanf("%d", &lecturesAttended);
-        totalAttended += lecturesAttended;
+    for (int i = 0; i <= daysBetween; i++) {
+        printf("How many lectures will you attend on day %d (%d/%d/%d): ", i + 1, day1, month1, year1);
+        scanf("%d", &lecturesAttendedPerDay[i]);
+        day1++;
+        if (day1 > getDaysInMonth(month1, year1)) {
+            day1 = 1;
+            month1++;
+            if (month1 > 12) {
+                month1 = 1;
+                year1++;
+            }
+        }
     }
 
-    // Calculate the total number of lectures attended during leave period
-    int totalLecturesLeave = 0;
-    for (int i = 0; i <= days; i++) {
-        totalLecturesLeave += lectures[i];
+    printf("Number of days between the two dates: %d days\n", daysBetween);
+
+    // Print the number of lectures and attended lectures for each day
+    int currentDay = day1;
+    int currentMonth = month1;
+    int currentYear = year1;
+
+    for (int i = 0; i <= daysBetween; i++) {
+        printf("Day %d (%d/%d/%d): %d lectures, %d attended\n", i + 1, currentDay, currentMonth, currentYear, lecturesPerDay[i], lecturesAttendedPerDay[i]);
+
+        currentDay++;
+        if (currentDay > getDaysInMonth(currentMonth, currentYear)) {
+            currentDay = 1;
+            currentMonth++;
+            if (currentMonth > 12) {
+                currentMonth = 1;
+                currentYear++;
+            }
+        }
     }
 
-    // Ask the user for total lectures that have happened in the past
     int totalLecturesPast;
-    printf("Enter the total lectures that have happened in the past: ");
+    int totalAttendedPast;
+
+    printf("Enter the total number of lectures that took place in the past: ");
     scanf("%d", &totalLecturesPast);
 
-    // Ask the user for total lectures attended in the past
-    int totalAttendedPast;
-    printf("Enter the total lectures attended in the past: ");
+    printf("Enter the total number of lectures you attended in the past: ");
     scanf("%d", &totalAttendedPast);
 
-    // Calculate total lectures and attendance by adding past and future
-    int totalLecturesTotal = totalLecturesPast + totalLecturesLeave;
-    int totalAttendedTotal = totalAttendedPast + totalAttended;
+    printf("Total number of lectures in the past: %d\n", totalLecturesPast);
+    printf("Total number of lectures attended in the past: %d\n", totalAttendedPast);
 
-    // Calculate the total attendance percentage
+    // Add the total lectures in the past with the total lectures during leave dates
+    int totalLecturesTotal = totalLecturesPast;
+    for (int i = 0; i <= daysBetween; i++) {
+        totalLecturesTotal += lecturesPerDay[i];
+    }
+
+    // Add the total lectures attended in the past with the number of lectures attended in leave dates
+    int totalAttendedTotal = totalAttendedPast;
+    for (int i = 0; i <= daysBetween; i++) {
+        totalAttendedTotal += lecturesAttendedPerDay[i];
+    }
+
+    // Calculate the attendance percentage
     float attendancePercentage = ((float)totalAttendedTotal / totalLecturesTotal) * 100;
 
     // Calculate past attendance percentage
@@ -82,12 +152,21 @@ int main() {
     // Calculate the drop in percentage
     float dropPercentage = pastAttendancePercentage - attendancePercentage;
 
-    // Ask the user if they want to add more lectures
-    char moreLectures;
-    printf("Do you want to add more lectures (y/n)? ");
-    scanf(" %c", &moreLectures);
+    printf("Total number of lectures in the past and during leave dates: %d\n", totalLecturesTotal);
+    printf("Total number of lectures attended in the past and during leave dates: %d\n", totalAttendedTotal);
+    printf("Attendance Percentage: %.2f%%\n", attendancePercentage);
+    printf("Past Attendance Percentage: %.2f%%\n", pastAttendancePercentage);
+    printf("Drop in Percentage: %.2f%%\n", dropPercentage);
 
-    if (moreLectures == 'y' || moreLectures == 'Y') {
+    while (1) {
+        char moreLectures;
+        printf("Do you want to add more lectures (y/n)? ");
+        scanf(" %c", &moreLectures);
+
+        if (moreLectures == 'n' || moreLectures == 'N') {
+            break;
+        }
+
         int additionalTotalLectures;
         printf("Enter the total number of additional lectures: ");
         scanf("%d", &additionalTotalLectures);
@@ -96,23 +175,22 @@ int main() {
         printf("Enter the number of additional lectures you will attend: ");
         scanf("%d", &additionalLecturesAttended);
 
-        // Update total lectures and attendance by adding additional data
+        if (additionalTotalLectures < 0 || additionalLecturesAttended < 0) {
+            printf("Invalid input. The number of lectures should be non-negative.\n");
+            continue;
+        }
+
         totalLecturesTotal += additionalTotalLectures;
         totalAttendedTotal += additionalLecturesAttended;
 
-        // Recalculate the attendance percentage
+        // Calculate the updated attendance percentage
         attendancePercentage = ((float)totalAttendedTotal / totalLecturesTotal) * 100;
-    }
 
-    printf("Total lectures attended during leave period: %d\n", totalLecturesLeave);
-    printf("Total lectures attended in the past: %d\n", totalAttendedPast);
-    printf("Total lectures attended in total: %d\n", totalAttendedTotal);
-    printf("Total lectures in the past: %d\n", totalLecturesPast);
-    printf("Total lectures in total: %d\n", totalLecturesTotal);
-    printf("Attendance Percentage: %.2f%%\n", attendancePercentage);
-    printf("Past Attendance Percentage: %.2f%%\n", pastAttendancePercentage);
-    printf("Drop in Percentage: %.2f%%\n", dropPercentage);
+        printf("Totals updated successfully.\n");
+        printf("Total number of lectures in the past and during leave dates: %d\n", totalLecturesTotal);
+        printf("Total number of lectures attended in the past and during leave dates: %d\n", totalAttendedTotal);
+        printf("Attendance Percentage: %.2f%%\n", attendancePercentage);
+    }
 
     return 0;
 }
-
